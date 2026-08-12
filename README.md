@@ -1,6 +1,7 @@
 # National Road Auto Finance — 2024 Credit Risk Dashboard
 
 An interactive Power BI dashboard that analyzes National Road Auto Finance's 2024 funded auto-loan portfolio, with a focus on credit-tier risk, delinquency, and charge-offs.
+Dataset was created using Claude 5.0. The loan information and customer information is fictional but applies to this hands-on project to demonstrate important skills.
 
 ## Project Objective
 
