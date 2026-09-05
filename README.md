@@ -1,85 +1,75 @@
 # National Road Auto Finance — 2024 Credit Risk Dashboard
 
-An interactive Power BI dashboard analyzing National Road Auto Finance's 2024 funded auto-loan portfolio, with a focus on credit-tier risk, delinquency, and charge-offs. Loan and customer data are fictional, synthetically generated using Claude Sonnet 5, and used to demonstrate hands-on skills in data modeling, risk segmentation, and dashboard design
+I wanted a project that looked at risk the way a lender actually has to — not just "which loans are late," but which segments of the portfolio are worth a closer look, and whether the data actually backs that up once you dig in. Real loan-level data isn't something you can just download, so I generated a synthetic 2024 auto-loan portfolio (using Claude Sonnet 5) built to behave like a realistic book of business, then treated it exactly like I would a real one: validate it in SQL first, then build a dashboard that actually answers a question instead of just displaying numbers.
 
-## Project Objective
+**To be upfront:** this is fictional data. No real customers, no real dealership. The point wasn't to fake a real report — it was to practice the actual workflow of credit risk analysis, from raw loan records to a defensible recommendation.
 
-This project answers the business question:
+
+<img width="1479" height="694" alt="NRAF Dashboard" src="https://github.com/user-attachments/assets/e680ed35-d8bd-4b05-885b-e5482eb14e94" />
+
+
+
+## The question I was trying to answer
 
 > Which credit tiers are driving delinquency and charge-off rates, and should underwriting be reviewed within those segments?
 
-The goal is to give stakeholders a clear view of 2024 portfolio funding and identify where credit risk may warrant further attention.
+Everything in this dashboard exists to answer that one question. Before building anything visual, I wanted to know: is risk actually concentrated in specific tiers, or is it spread out? And if it is concentrated, is that tier big enough to actually matter to the bottom line, or is it just a small, noisy segment?
 
-## Dashboard Features
+## Why I validated in SQL before touching Power BI
 
-The dashboard includes:
+I didn't want to build charts first and hope the numbers were right. So I ran the portfolio through SQL against PostgreSQL first, calculating things like total funded loans, loan counts by tier, delinquency and charge-off counts by tier, and average APR/credit score/loan term by tier. That gave me a set of numbers I trusted going into Power BI, and it meant that if something in the dashboard looked off later, I had a known-good reference to check it against instead of guessing.
 
-* Total amount funded
-* Total loans funded
-* Delinquent loan count
-* Charged-off loan count
-* Funded amount trend across 2024
-* Delinquency rate by credit tier
-* Charge-off rate by credit tier
-* Interactive slicers for dealership, month, credit tier, and loan term
+I also used SQL to look at delinquency and charge-off rates across APR bands and debt-to-income bands, not just credit tier — partly to see if tier was actually the right lens, or if something like DTI was a stronger signal hiding underneath it.
 
-Users can select a credit tier to see that segment's funded-loan volume and funding amount alongside its risk metrics.
-
-## Tools Used
-
-* Power BI — dashboard design, data modeling, DAX measures, and interactive visuals
-* SQL / PostgreSQL — data validation, portfolio analysis, and risk-rate calculations
-* Excel / CSV — source data preparation
-
-## SQL Analysis
-
-The SQL analysis was used to validate the portfolio and calculate:
-
-* Total funded loans
-* Loan counts by credit tier
-* Delinquent and charged-off loan counts by tier
-* Delinquency rate by tier
-* Charge-off rate by tier
-* Share of total delinquencies and charge-offs by tier
-* Average APR, amount financed, credit score, and loan term by tier
-* Delinquency and charge-off rates across APR and debt-to-income bands
-
-## Core Rate Logic
+## How I calculated the rates, and why it matters
 
 ```
-Delinquency Rate =
-Delinquent Loans in Credit Tier / Total Loans in Credit Tier
-
-Charge-Off Rate =
-Charged-Off Loans in Credit Tier / Total Loans in Credit Tier
+Delinquency Rate = Delinquent Loans in Credit Tier / Total Loans in Credit Tier
+Charge-Off Rate  = Charged-Off Loans in Credit Tier / Total Loans in Credit Tier
 ```
 
-Using the tier's own loan count as the denominator makes the comparison fair across segments of different sizes.
+The denominator here is deliberate. I used each tier's own loan count, not the whole portfolio, specifically so that a small tier with a handful of bad loans doesn't get unfairly buried next to a huge tier with the same raw count of defaults. Rate, not raw count, is what actually tells you whether a segment is risky — but as I found out, rate alone isn't the whole story either (more on that below).
 
-## Key Findings
+## What the dashboard actually shows
 
-* The 2024 portfolio includes 8,500 funded loans and approximately $212 million in funded volume.
-* Overall, the portfolio includes 845 delinquent loans and 256 charged-off loans.
-* The highest delinquency rates appear in the Subprime and Deep Subprime segments.
-* Charge-off rates are more closely clustered across tiers, so underwriting decisions should consider both risk rates and the number of loans in each tier.
-* A high-risk rate alone does not necessarily mean a tier is the largest driver of losses; portfolio exposure and total delinquent/charged-off loan volume are also important.
+- Total amount funded, total loans funded, delinquent loan count, charged-off loan count
+- Funded amount trend across 2024
+- Delinquency rate by credit tier
+- Charge-off rate by credit tier
+- Slicers for dealership, month, credit tier, and loan term
 
-## Business Recommendation
+Clicking into a specific credit tier updates both its funded volume and its risk metrics side by side — the point being that you shouldn't look at a tier's risk rate without also seeing how much of the portfolio that tier actually represents.
 
-The Subprime and Deep Subprime segments should be reviewed because they show the highest delinquency rates. Before tightening underwriting broadly, the lender should confirm that these tiers also represent meaningful funded-loan volume and loss exposure.
+## What I found
 
-Because charge-off rates are relatively similar across tiers, additional review of loan seasoning, dealership mix, and borrower characteristics such as debt-to-income ratio would help determine whether a policy change is warranted.
+The 2024 portfolio has 8,500 funded loans totaling roughly $212 million, with 845 delinquent loans and 256 charge-offs overall.
+
+Delinquency rates are clearly highest in the Subprime and Deep Subprime tiers — that part wasn't surprising. What I didn't expect going in: charge-off rates are much more tightly clustered across tiers than delinquency rates are. That's an important distinction, because it means a tier can look alarming on delinquency alone but not actually be the biggest driver of realized losses once you look at charge-offs specifically.
+
+That's the finding I'd push back on if someone jumped straight to "just tighten underwriting on Subprime." A high rate in a small tier can matter less to the business than a moderate rate in a tier that's carrying a lot more loan volume — so before recommending a policy change, I wanted to check exposure, not just rate.
+
+## What I'd actually recommend
+
+Subprime and Deep Subprime are worth a closer look — their delinquency rates justify that much. But I'd stop short of recommending a broad underwriting change until someone confirms those tiers also represent meaningful funded volume and loss exposure, not just a high rate on a small book.
+
+Since charge-off rates don't vary as sharply by tier, I think the more useful next step is looking at loan seasoning, dealership mix, and debt-to-income ratio specifically — those feel more likely to explain the gap between "who goes delinquent" and "who actually gets charged off" than credit tier alone does.
 
 ## Dashboard Preview
 
 Add a screenshot of the completed Power BI dashboard here.
 
+## Tools
+
+- **Power BI** — dashboard design, data modeling, DAX measures
+- **SQL / PostgreSQL** — validating the portfolio and calculating risk rates before building anything visual
+- **Excel / CSV** — source data preparation
+
 ## How to Use
 
-1. Open the Power BI dashboard file.
-2. Use the dealership, month, credit-tier, and term slicers to filter the portfolio.
-3. Review delinquency and charge-off rates by credit tier.
-4. Select an individual credit tier to view its funded-loan volume and risk metrics.
+1. Open the Power BI dashboard file
+2. Use the dealership, month, credit-tier, and term slicers to filter the portfolio
+3. Review delinquency and charge-off rates by credit tier
+4. Select an individual credit tier to see its funded volume alongside its risk metrics
 
 ## Repository Contents
 
@@ -89,7 +79,7 @@ Add a screenshot of the completed Power BI dashboard here.
 └── README.md                # Project overview and findings
 ```
 
-## Author
+---
 
-Jake
+**Jakob Bichsel**
 Aspiring Data Analyst | SQL | Power BI | Portfolio Analytics
